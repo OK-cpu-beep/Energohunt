@@ -8,160 +8,75 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
+import { fetchSearchItems } from '@/lib/api';
 
 // Sample data - in real app this would come from API
-const accountsData = {
-  2557: {
-    accountId: 2557,
-    isCommercial: false,
-    address: "Краснодарский край, г Сочи, с Нижняя Шиловка, ул Светогорская, д. 12",
-    buildingType: "Частный",
-    roomsCount: 3,
-    residentsCount: 3,
-    totalArea: 125.6,
-    consumption: {
-      "1": 6587,
-      "2": 5983,
-      "3": 5166,
-      "4": 5200,
-      "5": 5385,
-      "6": 3692,
-      "7": 4002,
-      "8": 4191,
-      "9": 3647,
-      "10": 3656,
-      "11": 4311,
-      "12": 3470,
-    },
-    is_commercial_prob: 0.345643,
-  },
-  2558: {
-    accountId: 2558,
-    isCommercial: true,
-    address: "Краснодарский край, г Краснодар, ул Красная, д. 45",
-    buildingType: "Коммерческое",
-    roomsCount: 8,
-    residentsCount: 15,
-    totalArea: 280.5,
-    consumption: {
-      "1": 8587,
-      "2": 7983,
-      "3": 7166,
-      "4": 7200,
-      "5": 7385,
-      "6": 5692,
-      "7": 6002,
-      "8": 6191,
-      "9": 5647,
-      "10": 5656,
-      "11": 6311,
-      "12": 5470,
-    },
-    is_commercial_prob: 0.845643,
-  },
-  2559: {
-    accountId: 2559,
-    isCommercial: false,
-    address: "Краснодарский край, г Анапа, ул Морская, д. 23",
-    buildingType: "Частный",
-    roomsCount: 5,
-    residentsCount: 4,
-    totalArea: 180.3,
-    consumption: {
-      "1": 5587,
-      "2": 4983,
-      "3": 4166,
-      "4": 4200,
-      "5": 4385,
-      "6": 2692,
-      "7": 3002,
-      "8": 3191,
-      "9": 2647,
-      "10": 2656,
-      "11": 3311,
-      "12": 2470,
-    },
-    is_commercial_prob: 0.245643,
-  },
-  2560: {
-    accountId: 2560,
-    isCommercial: false,
-    address: "Краснодарский край, г Геленджик, ул Курортная, д. 78",
-    buildingType: "Многоквартирный",
-    roomsCount: 2,
-    residentsCount: 2,
-    totalArea: 65.8,
-    consumption: {
-      "1": 3587,
-      "2": 2983,
-      "3": 2166,
-      "4": 2200,
-      "5": 2385,
-      "6": 1692,
-      "7": 2002,
-      "8": 2191,
-      "9": 1647,
-      "10": 1656,
-      "11": 2311,
-      "12": 1470,
-    },
-    is_commercial_prob: 0.145643,
-  },
-  2561: {
-    accountId: 2561,
-    isCommercial: true,
-    address: "Краснодарский край, г Новороссийск, ул Портовая, д. 156",
-    buildingType: "Коммерческое",
-    roomsCount: 12,
-    residentsCount: 25,
-    totalArea: 450.2,
-    consumption: {
-      "1": 12587,
-      "2": 11983,
-      "3": 10166,
-      "4": 10200,
-      "5": 10385,
-      "6": 8692,
-      "7": 9002,
-      "8": 9191,
-      "9": 8647,
-      "10": 8656,
-      "11": 9311,
-      "12": 8470,
-    },
-    is_commercial_prob: 0.945643,
-  },
+export interface SearchItem {
+  id: number;
+  title: string;
+  description: string;
+  avatar: string;
+  data: {
+    accountId: number;
+    isCommercial: boolean;
+    address: string;
+    buildingType: string;
+    roomsCount: number;
+    residentsCount: number;
+    totalArea: number | null;
+    consumption: Record<string, number>;
+    is_commercial_prob: number;
+  };
 }
 
 const monthNames = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"]
 
 export default function DashboardPage() {
+  const [searchQuery, setSearchQuery] = useState("")
+  const [searchItems, setSearchItems] = useState<SearchItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview")
-  const [accountData, setAccountData] = useState(null)
+  const [accountData, setAccountData] = useState<SearchItem | null>(null);
   const searchParams = useSearchParams()
-
   useEffect(() => {
-    const accountId = searchParams.get("accountId") || "2557"
-    const data = accountsData[accountId]
-    setAccountData(data)
-  }, [searchParams])
+    const loadData = async () => {
+      try {
+        const accountsData = await fetchSearchItems(1, 50);
+        setSearchItems(accountsData);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, []);
+
+
+useEffect(() => {
+  const accountId = searchParams.get("accountId");
+  if (accountId && searchItems.length > 0) {
+    const foundItem = searchItems.find(item => item.id.toString() === accountId);
+    if (foundItem) {
+      setAccountData(foundItem); // Сохраняем весь объект
+    }
+  }
+}, [searchParams, searchItems]);
 
   if (!accountData) {
     return <div>Загрузка...</div>
   }
 
-  const consumptionArray = Object.entries(accountData.consumption).map(([month, value]) => ({
+  const consumptionArray = Object.entries(accountData.data.consumption).map(([month, value]) => ({
     month: monthNames[Number.parseInt(month) - 1],
-    value: Number.parseInt(value),
+    value: value,
     monthNum: Number.parseInt(month),
   }))
 
   const maxConsumption = Math.max(...consumptionArray.map((d) => d.value))
   const totalConsumption = consumptionArray.reduce((sum, item) => sum + item.value, 0)
   const avgConsumption = Math.round(totalConsumption / 12)
-  const maxMonth = consumptionArray.find((item) => item.value === maxConsumption)
-  const minMonth = consumptionArray.find((item) => item.value === Math.min(...consumptionArray.map((d) => d.value)))
-
+  const maxMonth = consumptionArray.find((item) => item.value === maxConsumption)!;
+  const minMonth = consumptionArray.find((item) => item.value === Math.min(...consumptionArray.map((d) => d.value)))!; 
+  const koef_stat = 10 - 5.55;
   // Calculate seasonal consumption
   const winterConsumption = [consumptionArray[11], consumptionArray[0], consumptionArray[1]].reduce(
     (sum, item) => sum + item.value,
@@ -179,6 +94,7 @@ export default function DashboardPage() {
     (sum, item) => sum + item.value,
     0,
   )
+  const money_need = Math.round((autumnConsumption * 1.2 + summerConsumption * 0.9 + winterConsumption * 1.3 + springConsumption * 0.8) * koef_stat);
 
   const seasonalData = [
     { season: "Зима", value: winterConsumption, color: "bg-blue-500" },
@@ -188,7 +104,6 @@ export default function DashboardPage() {
   ]
 
   const maxSeasonal = Math.max(...seasonalData.map((d) => d.value))
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Decorative background elements */}
@@ -207,10 +122,10 @@ export default function DashboardPage() {
           </Link>
           <div className="flex-1">
             <h1 className="text-3xl font-bold text-gray-900">Панель аналитики</h1>
-            <p className="text-gray-600 mt-1">Лицевой счет #{accountData.accountId}</p>
+            <p className="text-gray-600 mt-1">Лицевой счет #{accountData.data.accountId}</p>
           </div>
-          <Badge variant={accountData.isCommercial ? "destructive" : "secondary"}>
-            {accountData.isCommercial ? "Коммерческий" : "Частный"}
+          <Badge variant={accountData.data.isCommercial ? "destructive" : "secondary"}>
+            {accountData.data.isCommercial ? "Коммерческий" : "Частный"}
           </Badge>
         </div>
 
@@ -220,23 +135,23 @@ export default function DashboardPage() {
             <div className="flex items-start gap-4">
               <MapPin className="w-6 h-6 text-green-600 mt-1" />
               <div className="flex-1">
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">{accountData.address}</h2>
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">{accountData.data.address}</h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                   <div className="flex items-center gap-2">
                     <Building className="w-4 h-4 text-gray-500" />
-                    <span>{accountData.buildingType}</span>
+                    <span>{accountData.data.buildingType}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Home className="w-4 h-4 text-gray-500" />
-                    <span>{accountData.roomsCount} комнат</span>
+                    <span>{accountData.data.roomsCount} комнат</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Users className="w-4 h-4 text-gray-500" />
-                    <span>{accountData.residentsCount} жильцов</span>
+                    <span>{accountData.data.residentsCount} жильцов</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Activity className="w-4 h-4 text-gray-500" />
-                    <span>{accountData.totalArea} м²</span>
+                    <span>{accountData.data.totalArea} м²</span>
                   </div>
                 </div>
               </div>
@@ -284,12 +199,12 @@ export default function DashboardPage() {
 
               <Card className="bg-white/80 backdrop-blur-sm">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Среднее потребление</CardTitle>
+                  <CardTitle className="text-sm font-medium">Задолженнность(в случае юр.лица)</CardTitle>
                   <Activity className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{avgConsumption.toLocaleString()}</div>
-                  <p className="text-xs text-gray-600">кВт·ч в месяц</p>
+                  <div className="text-2xl font-bold">{money_need.toLocaleString()}</div>
+                  <p className="text-xs text-gray-600">₽ за год</p>
                 </CardContent>
               </Card>
 
@@ -310,7 +225,11 @@ export default function DashboardPage() {
                   <Home className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{Math.round(totalConsumption / accountData.totalArea)}</div>
+                  <div className="text-2xl font-bold">
+                    {accountData.data.totalArea 
+                      ? Math.round(totalConsumption / accountData.data.totalArea)
+                      : "—"}
+                  </div>
                   <p className="text-xs text-gray-600">кВт·ч/м² в год</p>
                 </CardContent>
               </Card>
@@ -414,7 +333,7 @@ export default function DashboardPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-gray-900 mb-2">
-                    {Math.round(avgConsumption / accountData.residentsCount)}
+                    {Math.round(avgConsumption / accountData.data.residentsCount)}
                   </div>
                   <p className="text-sm text-gray-600">Среднее потребление на жильца</p>
                 </CardContent>
@@ -427,7 +346,10 @@ export default function DashboardPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-gray-900 mb-2">
-                    {Math.round(((winterConsumption - summerConsumption) / summerConsumption) * 100)}%
+                    {Math.abs(Math.round(((winterConsumption - summerConsumption) / summerConsumption) * 100)) > 10000
+                      ? "Абсолютно Значительная Разница"
+                      : `${Math.round(((winterConsumption - summerConsumption) / summerConsumption) * 100)}%`
+                    }
                   </div>
                   <p className="text-sm text-gray-600">Зима больше лета</p>
                 </CardContent>
@@ -467,9 +389,13 @@ export default function DashboardPage() {
                   </li>
                   <li className="flex items-start gap-2">
                     <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                    <span>
-                      Среднее потребление на м² составляет {Math.round(avgConsumption / accountData.totalArea)} кВт·ч
-                    </span>
+                  <span>
+                    Среднее потребление на м² составляет {
+                      accountData.data.totalArea && accountData.data.totalArea > 0
+                        ? Math.round(avgConsumption / accountData.data.totalArea)
+                        : "недоступно"
+                    } кВт·ч
+                  </span>
                   </li>
                   <li className="flex items-start gap-2">
                     <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
@@ -493,21 +419,21 @@ export default function DashboardPage() {
               <CardContent>
                 <div className="flex items-center gap-4 mb-4">
                   <div className="text-4xl font-bold text-gray-900">
-                    {Math.round(accountData.is_commercial_prob * 100)}%
+                    {Math.round(accountData.data.is_commercial_prob * 100)}%
                   </div>
                   <div className="flex-1">
                     <div className="w-full bg-gray-200 rounded-full h-4">
                       <div
                         className="bg-gradient-to-r from-green-500 to-yellow-500 h-4 rounded-full transition-all duration-1000"
-                        style={{ width: `${accountData.is_commercial_prob * 100}%` }}
+                        style={{ width: `${accountData.data.is_commercial_prob * 100}%` }}
                       ></div>
                     </div>
                   </div>
                 </div>
                 <p className="text-sm text-gray-600">
-                  {accountData.is_commercial_prob > 0.7
+                  {accountData.data.is_commercial_prob > 0.7
                     ? "Высокая вероятность коммерческого использования"
-                    : accountData.is_commercial_prob > 0.4
+                    : accountData.data.is_commercial_prob > 0.4
                       ? "Средняя вероятность коммерческого использования"
                       : "Низкая вероятность коммерческого использования"}
                 </p>

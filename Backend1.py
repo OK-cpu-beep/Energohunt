@@ -8,7 +8,11 @@ class ElectricityConsumer(models.Model):
     rooms_count = fields.IntField()
     residents_count = fields.IntField()
     total_area = fields.FloatField(null=True)
+    is_commercial_prob = fields.FloatField(default=0.0)  # Добавлено поле вероятности
     consumptions = fields.ReverseRelation["MonthlyConsumption"]
+    
+    class Meta:
+        ordering = ["-is_commercial_prob"]
 
 class MonthlyConsumption(models.Model):
     id = fields.IntField(pk=True, generated=True)

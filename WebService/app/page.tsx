@@ -1,170 +1,48 @@
 "use client"
 
-import { useState } from "react"
+import { useState,useEffect } from "react"
 import { Search, ArrowLeft, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { fetchSearchItems } from '@/lib/api';
 import Link from "next/link"
 
-const searchItems = [
-  {
-    id: 2557,
-    title: "Краснодарский край, г Сочи, с Нижняя Шиловка",
-    description: "ул Светогорская, д. 12 • Частный дом • 3 комнаты • 125.60 м²",
-    avatar: "С",
-    data: {
-      accountId: 2557,
-      isCommercial: false,
-      address: "Краснодарский край, г Сочи, с Нижняя Шиловка, ул Светогорская, д. 12",
-      buildingType: "Частный",
-      roomsCount: 3,
-      residentsCount: 3,
-      totalArea: 125.6,
-      consumption: {
-        "1": 6587,
-        "2": 5983,
-        "3": 5166,
-        "4": 5200,
-        "5": 5385,
-        "6": 3692,
-        "7": 4002,
-        "8": 4191,
-        "9": 3647,
-        "10": 3656,
-        "11": 4311,
-        "12": 3470,
-      },
-      is_commercial_prob: 0.345643,
-    },
-  },
-  {
-    id: 2558,
-    title: "Краснодарский край, г Краснодар, ул Красная",
-    description: "д. 45 • Коммерческое • 8 комнат • 280.50 м²",
-    avatar: "К",
-    data: {
-      accountId: 2558,
-      isCommercial: true,
-      address: "Краснодарский край, г Краснодар, ул Красная, д. 45",
-      buildingType: "Коммерческое",
-      roomsCount: 8,
-      residentsCount: 15,
-      totalArea: 280.5,
-      consumption: {
-        "1": 8587,
-        "2": 7983,
-        "3": 7166,
-        "4": 7200,
-        "5": 7385,
-        "6": 5692,
-        "7": 6002,
-        "8": 6191,
-        "9": 5647,
-        "10": 5656,
-        "11": 6311,
-        "12": 5470,
-      },
-      is_commercial_prob: 0.845643,
-    },
-  },
-  {
-    id: 2559,
-    title: "Краснодарский край, г Анапа, ул Морская",
-    description: "д. 23 • Частный дом • 5 комнат • 180.30 м²",
-    avatar: "А",
-    data: {
-      accountId: 2559,
-      isCommercial: false,
-      address: "Краснодарский край, г Анапа, ул Морская, д. 23",
-      buildingType: "Частный",
-      roomsCount: 5,
-      residentsCount: 4,
-      totalArea: 180.3,
-      consumption: {
-        "1": 5587,
-        "2": 4983,
-        "3": 4166,
-        "4": 4200,
-        "5": 4385,
-        "6": 2692,
-        "7": 3002,
-        "8": 3191,
-        "9": 2647,
-        "10": 2656,
-        "11": 3311,
-        "12": 2470,
-      },
-      is_commercial_prob: 0.245643,
-    },
-  },
-  {
-    id: 2560,
-    title: "Краснодарский край, г Геленджик, ул Курортная",
-    description: "д. 78 • Многоквартирный • 2 комнаты • 65.80 м²",
-    avatar: "Г",
-    data: {
-      accountId: 2560,
-      isCommercial: false,
-      address: "Краснодарский край, г Геленджик, ул Курортная, д. 78",
-      buildingType: "Многоквартирный",
-      roomsCount: 2,
-      residentsCount: 2,
-      totalArea: 65.8,
-      consumption: {
-        "1": 3587,
-        "2": 2983,
-        "3": 2166,
-        "4": 2200,
-        "5": 2385,
-        "6": 1692,
-        "7": 2002,
-        "8": 2191,
-        "9": 1647,
-        "10": 1656,
-        "11": 2311,
-        "12": 1470,
-      },
-      is_commercial_prob: 0.145643,
-    },
-  },
-  {
-    id: 2561,
-    title: "Краснодарский край, г Новороссийск, ул Портовая",
-    description: "д. 156 • Коммерческое • 12 комнат • 450.20 м²",
-    avatar: "Н",
-    data: {
-      accountId: 2561,
-      isCommercial: true,
-      address: "Краснодарский край, г Новороссийск, ул Портовая, д. 156",
-      buildingType: "Коммерческое",
-      roomsCount: 12,
-      residentsCount: 25,
-      totalArea: 450.2,
-      consumption: {
-        "1": 12587,
-        "2": 11983,
-        "3": 10166,
-        "4": 10200,
-        "5": 10385,
-        "6": 8692,
-        "7": 9002,
-        "8": 9191,
-        "9": 8647,
-        "10": 8656,
-        "11": 9311,
-        "12": 8470,
-      },
-      is_commercial_prob: 0.945643,
-    },
-  },
-]
+export interface SearchItem {
+  id: number;
+  title: string;
+  description: string;
+  avatar: string;
+  data: {
+    accountId: number;
+    isCommercial: boolean;
+    address: string;
+    buildingType: string;
+    roomsCount: number;
+    residentsCount: number;
+    totalArea: number | null;
+    consumption: Record<string, number>;
+    is_commercial_prob: number;
+  };
+}
 
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [isSearchActive, setIsSearchActive] = useState(false)
-
+  const [searchItems, setSearchItems] = useState<SearchItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const data = await fetchSearchItems(1, 50);
+        setSearchItems(data);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, []);
   const filteredItems = searchItems.filter(
     (item) =>
       item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -285,7 +163,6 @@ export default function HomePage() {
             <h3 className="font-semibold text-gray-900 mb-2">Умные отчеты</h3>
             <p className="text-sm text-gray-600">Создание интеллектуальных отчетов с инсайтами на основе ИИ</p>
           </Card>
-
           <Card className="p-6 hover:shadow-lg transition-shadow bg-white/80 backdrop-blur-sm">
             <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
               <div className="w-6 h-6 bg-purple-500 rounded"></div>
