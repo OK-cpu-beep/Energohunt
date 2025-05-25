@@ -348,7 +348,7 @@ useEffect(() => {
                   <div className="text-2xl font-bold text-gray-900 mb-2">
                     {Math.abs(Math.round(((winterConsumption - summerConsumption) / summerConsumption) * 100)) > 10000
                       ? "Абсолютно Значительная Разница"
-                      : `${Math.round(((winterConsumption - summerConsumption) / summerConsumption) * 100)}%`
+                      : `${Math.abs(Math.round(((winterConsumption - summerConsumption) / summerConsumption) * 100))}%`
                     }
                   </div>
                   <p className="text-sm text-gray-600">Зима больше лета</p>
@@ -459,9 +459,8 @@ useEffect(() => {
                   <CardTitle>Рекомендации</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  <div className="text-sm">• Рассмотрите установку энергосберегающих устройств</div>
-                  <div className="text-sm">• Оптимизируйте потребление в пиковые месяцы</div>
-                  <div className="text-sm">• Проведите энергоаудит помещения</div>
+                  <div className="text-sm">• Сделать очное обследование</div>
+                  <div className="text-sm">• (Данный список может продолаться)</div>
                 </CardContent>
               </Card>
             </div>

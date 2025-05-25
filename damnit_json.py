@@ -34,8 +34,8 @@ def flatten_dataset(data, include_target=True):
         consumption = entry.get("consumption", {})
         month_values = {m: consumption.get(str(m), 0) for m in range(1, 13)}
 
-        summer = [month_values[m] for m in [5, 6, 7, 8, 9]]
-        winter = [month_values[m] for m in [10, 11, 12, 1, 2, 3, 4]]
+        summer = [month_values[m] for m in [6, 7, 8]]
+        winter = [month_values[m] for m in [12, 1, 2]]
         all_vals = list(month_values.values())
 
         flat["summer_mean"] = np.mean(summer)

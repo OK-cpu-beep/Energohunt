@@ -38,7 +38,7 @@ class SearchItem(BaseModel):
 @app.get("/consumers/", response_model=List[SearchItem])
 async def get_search_items(
     page: int = Query(1, ge=1),
-    per_page: int = Query(50, ge=1, le=100)
+    per_page: int = Query(200, ge=1, le=400)
 ):
     offset = (page - 1) * per_page
     consumers = await ElectricityConsumer.all().order_by("-is_commercial_prob").offset(offset).limit(per_page).prefetch_related("consumptions")
