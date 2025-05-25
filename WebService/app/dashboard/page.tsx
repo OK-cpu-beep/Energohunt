@@ -41,7 +41,7 @@ export default function DashboardPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const accountsData = await fetchSearchItems(1, 50);
+        const accountsData = await fetchSearchItems(1, 200);
         setSearchItems(accountsData);
       } finally {
         setLoading(false);
@@ -460,7 +460,6 @@ useEffect(() => {
                 </CardHeader>
                 <CardContent className="space-y-2">
                   <div className="text-sm">• Сделать очное обследование</div>
-                  <div className="text-sm">• (Данный список может продолаться)</div>
                 </CardContent>
               </Card>
             </div>

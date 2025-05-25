@@ -35,7 +35,7 @@ export default function HomePage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const data = await fetchSearchItems(1, 50);
+        const data = await fetchSearchItems(1, 200);
         setSearchItems(data);
       } finally {
         setLoading(false);
